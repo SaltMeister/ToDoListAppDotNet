@@ -3,21 +3,17 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace ToDoListAppDotNet.Models
 {
-    public class ToDoItem
+    public class ToDoItemGroup
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
 
-        [BsonElement("taskGroupId")]
-        public string ParentId { get; set; } = string.Empty;
-
         [BsonElement("title")]
-        public string Title { get; set; } = string.Empty;
+        public string Title { get; set; } = String.Empty;
 
-        
-        [BsonElement("isCompleted")]
-        public bool IsCompleted { get; set; } = false;
+        [BsonElement("taskGroupDate")]
+        public DateTime createdDate { get; set; } = DateTime.UtcNow;
 
 
     }

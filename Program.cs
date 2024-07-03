@@ -1,5 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
+using System;
 using ToDoListAppDotNet.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,41 +26,47 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapGet("/toDoList/{idString}", async (string idString, MongoDbService mongoDbService) =>
+// Get All ToDoListGroups
+app.MapGet("/toDoListGroup/", async (MongoDbService mongoDbService) =>
 {
-    var todoCollection = mongoDbService.GetCollection<ToDoItem>("ToDoItems");
-    var filter = Builders<ToDoItem>.Filter.Eq("_id", ObjectId.Parse(idString));
+    var todoCollection = mongoDbService.GetCollection<ToDoItemGroup>("ToDoItemGroup");
+    var filter = Builders<ToDoItemGroup>.Filter.Empty;
 
-    List<ToDoItem> searchResults = new List<ToDoItem>();
+    List<ToDoItemGroup> searchResults = new List<ToDoItemGroup>();
 
 
     using (var cursor = await todoCollection.FindAsync(filter))
-    {
         cursor.ToList().ForEach(x => searchResults.Add(x));
-    }
-
 
     return new { Success = true, Reaspon = String.Empty, Body = searchResults};
 });
 
-app.MapPost("/toDoList", async (ToDoItem newToDoItem, MongoDbService mongoDbService) =>
+app.MapPost("/toDoListGroup", async (ToDoItemGroup newToDoItemGroup, MongoDbService mongoDbService) =>
 {
+    var todoCollection = mongoDbService.GetCollection<ToDoItemGroup>("ToDoItemGroup");
 
-    if (newToDoItem.Title == String.Empty)
-    {
-        return new { Success=false, Reason="No Title Specified", Body=new ToDoItem() };
-    }
+    await todoCollection.InsertOneAsync(newToDoItemGroup);
 
-    var todoCollection = mongoDbService.GetCollection<ToDoItem>("ToDoItems");
-
-    await todoCollection.InsertOneAsync(newToDoItem);
-
-    return new { Success = true, Reason = String.Empty, Body=newToDoItem};
+    return new { Success = true, Reason = String.Empty, Body= newToDoItemGroup };
 });
 
-app.MapDelete("/toDoList", async (String listId, MongoDbService mongoDbService) =>
+app.MapPut("toDoListGroup/{groupId}", async (String groupId, String newTitle, MongoDbService mongoDbService) =>
 {
+    var todoCollection = mongoDbService.GetCollection<ToDoItemGroup>("ToDoItemGroup");
+    var filter = Builders<ToDoItemGroup>.Filter.Eq("_id", ObjectId.Parse(groupId));
+    var update = Builders<ToDoItemGroup>.Update.Set(toDoItemGroup => toDoItemGroup.Title, newTitle);
 
+    await todoCollection.UpdateOneAsync(filter, update);
+});
+
+app.MapDelete("/toDoListGroup", async (String groupId, MongoDbService mongoDbService) =>
+{
+    var todoCollection = mongoDbService.GetCollection<ToDoItemGroup>("ToDoItemGroup");
+    var filter = Builders<ToDoItemGroup>.Filter.Eq("_id", ObjectId.Parse(groupId));
+
+    await todoCollection.DeleteOneAsync(filter);
+
+    return new { Success = true, Reason = String.Empty, Body = "" };
 });
 
 app.Run();
